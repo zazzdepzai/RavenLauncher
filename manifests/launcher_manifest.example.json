@@ -1,0 +1,6 @@
+{
+  "latestVersion": "1.1.0",
+  "downloadUrl": "https://your-server.example.com/launcher/launcher-1.1.0.pkg",
+  "sha256": "REPLACE_WITH_REAL_SHA256",
+  "changelog": "Fixed HUD progress bar not resetting; improved Forge mod pruning."
+}

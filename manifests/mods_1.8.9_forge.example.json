@@ -1,0 +1,24 @@
+{
+  "mcVersion": "1.8.9",
+  "forgeVersion": "11.15.1.2318",
+  "mods": [
+    {
+      "id": "optifine",
+      "displayName": "OptiFine",
+      "fileName": "OptiFine_1.8.9_HD_U_M5.jar",
+      "url": "https://your-server.example.com/mods/OptiFine_1.8.9_HD_U_M5.jar",
+      "sha256": "REPLACE_WITH_REAL_SHA256",
+      "version": "HD_U_M5",
+      "enabled": true
+    },
+    {
+      "id": "inventory-tweaks",
+      "displayName": "Inventory Tweaks",
+      "fileName": "InventoryTweaks-1.63.jar",
+      "url": "https://your-server.example.com/mods/InventoryTweaks-1.63.jar",
+      "sha256": "REPLACE_WITH_REAL_SHA256",
+      "version": "1.63",
+      "enabled": true
+    }
+  ]
+}
