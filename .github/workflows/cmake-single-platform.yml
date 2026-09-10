@@ -1,0 +1,122 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  core:
+    name: Build C++ core (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libcurl4-openssl-dev libssl-dev nlohmann-json3-dev
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Upload core library artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mclauncher-core-linux
+          path: build/libmclauncher_core.a
+
+  desktop-hud:
+    name: Build desktop HUD preview (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libsfml-dev
+
+      - name: Configure
+        run: cmake -B desktop/build -S desktop
+
+      - name: Build
+        run: cmake --build desktop/build
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ravenxd-hud-desktop-linux
+          path: desktop/build/ravenxd_hud_desktop
+
+  ios:
+    name: Build iOS app (macOS)
+    runs-on: macos-latest
+    # This job only runs once an .xcodeproj / .xcworkspace exists in the repo
+    # (see README.md, "Create the actual Xcode project"). Until then, comment
+    # this job out or it will fail at the "Build" step with "no such project".
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: sudo xcode-select -switch /Applications/Xcode.app
+
+      - name: Show available schemes
+        run: xcodebuild -list -project MCLauncherIOS.xcodeproj
+
+      - name: Build for iOS Simulator (unsigned)
+        run: |
+          xcodebuild build \
+            -project MCLauncherIOS.xcodeproj \
+            -scheme MCLauncherIOS \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            CODE_SIGNING_ALLOWED=NO
+
+      # --- Signed device build (optional) ---
+      # Requires these repo secrets to be set:
+      #   IOS_P12_BASE64          - base64-encoded signing certificate (.p12)
+      #   IOS_P12_PASSWORD        - password for the .p12
+      #   IOS_PROVISION_BASE64    - base64-encoded provisioning profile (.mobileprovision)
+      #
+      # - name: Import signing certificate
+      #   run: |
+      #     echo "$IOS_P12_BASE64" | base64 --decode > cert.p12
+      #     security create-keychain -p actions build.keychain
+      #     security import cert.p12 -k build.keychain -P "$IOS_P12_PASSWORD" -T /usr/bin/codesign
+      #     security list-keychains -d user -s build.keychain
+      #     security unlock-keychain -p actions build.keychain
+      #     security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions build.keychain
+      #   env:
+      #     IOS_P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
+      #     IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+      #
+      # - name: Install provisioning profile
+      #   run: |
+      #     mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+      #     echo "$IOS_PROVISION_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+      #   env:
+      #     IOS_PROVISION_BASE64: ${{ secrets.IOS_PROVISION_BASE64 }}
+      #
+      # - name: Archive and export signed .ipa
+      #   run: |
+      #     xcodebuild archive \
+      #       -project MCLauncherIOS.xcodeproj \
+      #       -scheme MCLauncherIOS \
+      #       -sdk iphoneos \
+      #       -archivePath build/MCLauncherIOS.xcarchive
+      #     xcodebuild -exportArchive \
+      #       -archivePath build/MCLauncherIOS.xcarchive \
+      #       -exportOptionsPlist ExportOptions.plist \
+      #       -exportPath build/ipa
+      #
+      # - name: Upload signed .ipa
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: mclauncher-ios-ipa
+      #     path: build/ipa/*.ipa
